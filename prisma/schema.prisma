@@ -17,12 +17,10 @@ model User {
   status            UserStatus        @default(ACTIVE)
   profileImage      String?
   collegeId         String?
-  emailVerified     Boolean           @default(false)
-  isActive          Boolean           @default(true)
   isProfileComplete Boolean           @default(false)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
-  lastLoginAt       DateTime?
+  bookmarks         Bookmark[]
   events            Event[]
   registrations     Registration[]
   college           College?          @relation(fields: [collegeId], references: [id])
@@ -115,10 +113,10 @@ model Event {
   collegeId                String?
   createdAt                DateTime    @default(now())
   updatedAt                DateTime    @updatedAt
-  publishedAt              DateTime?
-  registrations            Registration[]
+  bookmarks                Bookmark[]
   college                  College?    @relation(fields: [collegeId], references: [id])
   organiser                User        @relation(fields: [organiserId], references: [id])
+  registrations            Registration[]
 
   @@index([collegeId])
   @@index([organiserId])
@@ -132,15 +130,21 @@ model Registration {
   id        String             @id @default(uuid())
   userId    String
   eventId   String
-  status    RegistrationStatus @default(PENDING)
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
-  event     Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status             RegistrationStatus @default(PENDING)
+  qrCode             String?            @unique
+  customFieldsData   String?            @db.Text
+  paymentScreenshot  String?
+  transactionId      String?
+  attendanceMarkedAt DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  event              Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventId])
   @@index([userId])
   @@index([eventId])
+  @@index([qrCode])
   @@index([status])
   @@map("registrations")
 }
@@ -158,6 +162,34 @@ model AdminRequest {
   @@index([status])
   @@index([email])
   @@map("admin_requests")
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([userId])
+  @@index([eventId])
+  @@map("bookmarks")
+}
+
+model contact_messages {
+  id        String    @id
+  name      String
+  email     String
+  subject   String?
+  message   String
+  isRead    Boolean   @default(false)
+  repliedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([createdAt])
+  @@index([isRead])
 }
 
 enum Role {
@@ -191,6 +223,7 @@ enum EventStatus {
 enum RegistrationStatus {
   PENDING
   CONFIRMED
+  ATTENDED
   CANCELLED
 }
 
