@@ -23,6 +23,7 @@ model User {
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   lastLoginAt       DateTime?
+  events            Event[]
   college           College?          @relation(fields: [collegeId], references: [id])
   organizerRequest  OrganizerRequest?
   profile           Profile?
@@ -82,11 +83,47 @@ model College {
   location  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  events     Event[]
   users     User[]
 
   @@index([name])
   @@index([domain])
   @@map("colleges")
+}
+
+model Event {
+  id                       String      @id @default(uuid())
+  eventCode                String      @unique
+  title                    String
+  description              String?
+  tags                     String?
+  date                     DateTime
+  venue                    String
+  bannerUrl                String?
+  capacity                 Int?
+  isPaid                   Boolean     @default(false)
+  ticketPrice              Decimal?    @db.Decimal(10, 2)
+  registrationType         String      @default("SOLO")
+  teamRequired             Boolean     @default(false)
+  minTeamSize              Int         @default(1)
+  maxTeamSize              Int         @default(5)
+  isLive                   Boolean     @default(false)
+  customRegistrationFields String?     @db.Text
+  status                   EventStatus @default(DRAFT)
+  organiserId              String
+  collegeId                String?
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
+  publishedAt              DateTime?
+  college                  College?    @relation(fields: [collegeId], references: [id])
+  organiser                User        @relation(fields: [organiserId], references: [id])
+
+  @@index([collegeId])
+  @@index([organiserId])
+  @@index([date])
+  @@index([status])
+  @@index([eventCode])
+  @@map("events")
 }
 
 model AdminRequest {
@@ -122,6 +159,14 @@ enum AdminRequestStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  ONGOING
+  COMPLETED
+  CANCELLED
 }
 
 enum Branch {
