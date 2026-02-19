@@ -24,11 +24,28 @@ const steps: Array<{ id: StepId; title: string; description: string }> = [
 
 export default function CreateEventPage() {
   const [activeStep, setActiveStep] = useState<StepId>('eventInfo');
+  const [posterName, setPosterName] = useState('');
+  const [eventInfo, setEventInfo] = useState({
+    title: '',
+    description: '',
+    eventDate: '',
+    startTime: '',
+    endTime: '',
+  });
 
   const activeIndex = useMemo(
     () => steps.findIndex((step) => step.id === activeStep),
     [activeStep]
   );
+
+  const updateEventInfo =
+    (field: keyof typeof eventInfo) =>
+    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setEventInfo((prev) => ({
+        ...prev,
+        [field]: event.target.value,
+      }));
+    };
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
@@ -73,6 +90,94 @@ export default function CreateEventPage() {
             <p className="mt-2 text-sm opacity-80">
               Add poster, title, description, date, time, and venue details.
             </p>
+
+            <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label htmlFor="poster" className="mb-2 block text-sm font-medium">
+                  Poster Upload
+                </label>
+                <input
+                  id="poster"
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    setPosterName(file?.name ?? '');
+                  }}
+                  className="block w-full rounded-lg border p-2 text-sm"
+                />
+                {posterName ? (
+                  <p className="mt-2 text-xs opacity-80">Selected: {posterName}</p>
+                ) : null}
+              </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="title" className="mb-2 block text-sm font-medium">
+                  Event Title
+                </label>
+                <input
+                  id="title"
+                  type="text"
+                  value={eventInfo.title}
+                  onChange={updateEventInfo('title')}
+                  placeholder="Enter event title"
+                  className="w-full rounded-lg border p-2 text-sm"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="description" className="mb-2 block text-sm font-medium">
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  value={eventInfo.description}
+                  onChange={updateEventInfo('description')}
+                  placeholder="Describe your event"
+                  rows={4}
+                  className="w-full rounded-lg border p-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="eventDate" className="mb-2 block text-sm font-medium">
+                  Event Date
+                </label>
+                <input
+                  id="eventDate"
+                  type="date"
+                  value={eventInfo.eventDate}
+                  onChange={updateEventInfo('eventDate')}
+                  className="w-full rounded-lg border p-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="startTime" className="mb-2 block text-sm font-medium">
+                  Start Time
+                </label>
+                <input
+                  id="startTime"
+                  type="time"
+                  value={eventInfo.startTime}
+                  onChange={updateEventInfo('startTime')}
+                  className="w-full rounded-lg border p-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="endTime" className="mb-2 block text-sm font-medium">
+                  End Time
+                </label>
+                <input
+                  id="endTime"
+                  type="time"
+                  value={eventInfo.endTime}
+                  onChange={updateEventInfo('endTime')}
+                  className="w-full rounded-lg border p-2 text-sm"
+                />
+              </div>
+            </div>
           </div>
         ) : null}
 
