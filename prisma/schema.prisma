@@ -24,6 +24,7 @@ model User {
   updatedAt         DateTime          @updatedAt
   lastLoginAt       DateTime?
   events            Event[]
+  registrations     Registration[]
   college           College?          @relation(fields: [collegeId], references: [id])
   organizerRequest  OrganizerRequest?
   profile           Profile?
@@ -115,6 +116,7 @@ model Event {
   createdAt                DateTime    @default(now())
   updatedAt                DateTime    @updatedAt
   publishedAt              DateTime?
+  registrations            Registration[]
   college                  College?    @relation(fields: [collegeId], references: [id])
   organiser                User        @relation(fields: [organiserId], references: [id])
 
@@ -124,6 +126,23 @@ model Event {
   @@index([status])
   @@index([eventCode])
   @@map("events")
+}
+
+model Registration {
+  id        String             @id @default(uuid())
+  userId    String
+  eventId   String
+  status    RegistrationStatus @default(PENDING)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  event     Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([userId])
+  @@index([eventId])
+  @@index([status])
+  @@map("registrations")
 }
 
 model AdminRequest {
@@ -166,6 +185,12 @@ enum EventStatus {
   PUBLISHED
   ONGOING
   COMPLETED
+  CANCELLED
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
   CANCELLED
 }
 
