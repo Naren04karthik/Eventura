@@ -37,6 +37,8 @@ export default function CreateEventPage() {
     tags: '',
     ticketPrice: '',
     isPaid: false,
+    registrationSource: 'WEBSITE',
+    externalFormUrl: '',
   });
 
   const activeIndex = useMemo(
@@ -54,14 +56,14 @@ export default function CreateEventPage() {
     };
 
   const updateEventInfoSelect =
-    (field: 'capacity' | 'visibility') =>
+    (field: 'capacity' | 'visibility' | 'registrationSource') =>
     (event: React.ChangeEvent<HTMLSelectElement>) => {
       setEventInfo((prev) => ({
         ...prev,
         [field]: event.target.value,
       }));
     };
-//   this for toggling paid event 
+
   const togglePaidEvent = (event: React.ChangeEvent<HTMLInputElement>) => {
     setEventInfo((prev) => ({
       ...prev,
@@ -301,6 +303,46 @@ export default function CreateEventPage() {
             <p className="mt-2 text-sm opacity-80">
               Choose between website registration and external registration link.
             </p>
+
+            <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div>
+                <label htmlFor="registrationSource" className="mb-2 block text-sm font-medium">
+                  Registration Source
+                </label>
+                <select
+                  id="registrationSource"
+                  value={eventInfo.registrationSource}
+                  onChange={updateEventInfoSelect('registrationSource')}
+                  className="w-full rounded-lg border p-2 text-sm"
+                >
+                  <option value="WEBSITE">Website Form</option>
+                  <option value="GOOGLE_FORM">Google Form</option>
+                </select>
+              </div>
+
+              {eventInfo.registrationSource === 'GOOGLE_FORM' ? (
+                <div className="md:col-span-2">
+                  <label htmlFor="externalFormUrl" className="mb-2 block text-sm font-medium">
+                    Google Form URL
+                  </label>
+                  <input
+                    id="externalFormUrl"
+                    type="url"
+                    value={eventInfo.externalFormUrl}
+                    onChange={updateEventInfo('externalFormUrl')}
+                    placeholder="https://docs.google.com/forms/..."
+                    className="w-full rounded-lg border p-2 text-sm"
+                  />
+                </div>
+              ) : (
+                <div className="md:col-span-2 rounded-lg border p-4">
+                  <p className="text-sm font-medium">Website registration enabled</p>
+                  <p className="mt-1 text-sm opacity-80">
+                    Participants will register through Eventura form fields.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         ) : null}
 
