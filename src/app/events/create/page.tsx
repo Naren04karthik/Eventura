@@ -31,6 +31,12 @@ export default function CreateEventPage() {
     eventDate: '',
     startTime: '',
     endTime: '',
+    venue: '',
+    capacity: 'Unlimited',
+    visibility: 'College',
+    tags: '',
+    ticketPrice: '',
+    isPaid: false,
   });
 
   const activeIndex = useMemo(
@@ -46,6 +52,23 @@ export default function CreateEventPage() {
         [field]: event.target.value,
       }));
     };
+
+  const updateEventInfoSelect =
+    (field: 'capacity' | 'visibility') =>
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      setEventInfo((prev) => ({
+        ...prev,
+        [field]: event.target.value,
+      }));
+    };
+//   this for toggling paid event 
+  const togglePaidEvent = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setEventInfo((prev) => ({
+      ...prev,
+      isPaid: event.target.checked,
+      ticketPrice: event.target.checked ? prev.ticketPrice : '',
+    }));
+  };
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
@@ -177,6 +200,97 @@ export default function CreateEventPage() {
                   className="w-full rounded-lg border p-2 text-sm"
                 />
               </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="venue" className="mb-2 block text-sm font-medium">
+                  Venue
+                </label>
+                <input
+                  id="venue"
+                  type="text"
+                  value={eventInfo.venue}
+                  onChange={updateEventInfo('venue')}
+                  placeholder="Enter venue or location"
+                  className="w-full rounded-lg border p-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="capacity" className="mb-2 block text-sm font-medium">
+                  Capacity
+                </label>
+                <select
+                  id="capacity"
+                  value={eventInfo.capacity}
+                  onChange={updateEventInfoSelect('capacity')}
+                  className="w-full rounded-lg border p-2 text-sm"
+                >
+                  <option value="Unlimited">Unlimited</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="200">200</option>
+                  <option value="500">500</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="visibility" className="mb-2 block text-sm font-medium">
+                  Visibility
+                </label>
+                <select
+                  id="visibility"
+                  value={eventInfo.visibility}
+                  onChange={updateEventInfoSelect('visibility')}
+                  className="w-full rounded-lg border p-2 text-sm"
+                >
+                  <option value="College">College</option>
+                  <option value="Public">Public</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="tags" className="mb-2 block text-sm font-medium">
+                  Tags
+                </label>
+                <input
+                  id="tags"
+                  type="text"
+                  value={eventInfo.tags}
+                  onChange={updateEventInfo('tags')}
+                  placeholder="Example: coding, workshop, hackathon"
+                  className="w-full rounded-lg border p-2 text-sm"
+                />
+              </div>
+
+              <div className="md:col-span-2 flex items-center gap-3">
+                <input
+                  id="isPaid"
+                  type="checkbox"
+                  checked={eventInfo.isPaid}
+                  onChange={togglePaidEvent}
+                  className="h-4 w-4"
+                />
+                <label htmlFor="isPaid" className="text-sm font-medium">
+                  This is a paid event
+                </label>
+              </div>
+
+              {eventInfo.isPaid ? (
+                <div>
+                  <label htmlFor="ticketPrice" className="mb-2 block text-sm font-medium">
+                    Ticket Price
+                  </label>
+                  <input
+                    id="ticketPrice"
+                    type="number"
+                    min="0"
+                    value={eventInfo.ticketPrice}
+                    onChange={updateEventInfo('ticketPrice')}
+                    placeholder="Enter price"
+                    className="w-full rounded-lg border p-2 text-sm"
+                  />
+                </div>
+              ) : null}
             </div>
           </div>
         ) : null}
