@@ -3,6 +3,14 @@
 import { useMemo, useState } from 'react';
 
 type StepId = 'eventInfo' | 'registrationMode' | 'registrationForm';
+type CustomFieldType = 'text' | 'email' | 'phone' | 'number' | 'date' | 'textarea';
+
+type CustomField = {
+  id: string;
+  label: string;
+  type: CustomFieldType;
+  required: boolean;
+};
 
 const steps: Array<{ id: StepId; title: string; description: string }> = [
   {
@@ -40,6 +48,15 @@ export default function CreateEventPage() {
     registrationSource: 'WEBSITE',
     externalFormUrl: '',
   });
+//   added a custom fields so that one can add , remove and have some required controls.
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [newField, setNewField] = useState<{ label: string; type: CustomFieldType; required: boolean }>(
+    {
+      label: '',
+      type: 'text',
+      required: false,
+    }
+  );
 
   const activeIndex = useMemo(
     () => steps.findIndex((step) => step.id === activeStep),
@@ -70,6 +87,33 @@ export default function CreateEventPage() {
       isPaid: event.target.checked,
       ticketPrice: event.target.checked ? prev.ticketPrice : '',
     }));
+  };
+
+  const addCustomField = () => {
+    const label = newField.label.trim();
+    if (!label) {
+      return;
+    }
+
+    setCustomFields((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        label,
+        type: newField.type,
+        required: newField.required,
+      },
+    ]);
+
+    setNewField({
+      label: '',
+      type: 'text',
+      required: false,
+    });
+  };
+
+  const removeCustomField = (fieldId: string) => {
+    setCustomFields((prev) => prev.filter((field) => field.id !== fieldId));
   };
 
   return (
@@ -352,6 +396,108 @@ export default function CreateEventPage() {
             <p className="mt-2 text-sm opacity-80">
               Configure required fields and custom fields for registrations.
             </p>
+
+            <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div className="md:col-span-2 rounded-lg border p-4">
+                <h3 className="text-base font-semibold">Add Custom Field</h3>
+                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="md:col-span-2">
+                    <label htmlFor="fieldLabel" className="mb-2 block text-sm font-medium">
+                      Field Label
+                    </label>
+                    <input
+                      id="fieldLabel"
+                      type="text"
+                      value={newField.label}
+                      onChange={(event) =>
+                        setNewField((prev) => ({
+                          ...prev,
+                          label: event.target.value,
+                        }))
+                      }
+                      placeholder="Example: Department"
+                      className="w-full rounded-lg border p-2 text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="fieldType" className="mb-2 block text-sm font-medium">
+                      Field Type
+                    </label>
+                    <select
+                      id="fieldType"
+                      value={newField.type}
+                      onChange={(event) =>
+                        setNewField((prev) => ({
+                          ...prev,
+                          type: event.target.value as CustomFieldType,
+                        }))
+                      }
+                      className="w-full rounded-lg border p-2 text-sm"
+                    >
+                      <option value="text">Text</option>
+                      <option value="email">Email</option>
+                      <option value="phone">Phone</option>
+                      <option value="number">Number</option>
+                      <option value="date">Date</option>
+                      <option value="textarea">Textarea</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-4">
+                  <label className="flex items-center gap-2 text-sm font-medium">
+                    <input
+                      type="checkbox"
+                      checked={newField.required}
+                      onChange={(event) =>
+                        setNewField((prev) => ({
+                          ...prev,
+                          required: event.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4"
+                    />
+                    Required field
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={addCustomField}
+                    className="rounded-lg border px-4 py-2 text-sm font-medium"
+                  >
+                    Add Field
+                  </button>
+                </div>
+              </div>
+
+              <div className="md:col-span-2 rounded-lg border p-4">
+                <h3 className="text-base font-semibold">Custom Fields</h3>
+                {customFields.length === 0 ? (
+                  <p className="mt-3 text-sm opacity-80">No custom fields added yet.</p>
+                ) : (
+                  <ul className="mt-3 space-y-3">
+                    {customFields.map((field) => (
+                      <li key={field.id} className="flex items-center justify-between rounded-lg border p-3">
+                        <div>
+                          <p className="text-sm font-medium">{field.label}</p>
+                          <p className="text-xs opacity-80">
+                            Type: {field.type} • {field.required ? 'Required' : 'Optional'}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeCustomField(field.id)}
+                          className="rounded-lg border px-3 py-1.5 text-xs font-medium"
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
           </div>
         ) : null}
       </section>
