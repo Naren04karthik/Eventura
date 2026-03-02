@@ -47,3 +47,31 @@ export const superadminLoginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 });
+
+export const submitAdminRequestSchema = z.object({
+  collegeName: z.string().min(3, "College name must be at least 3 characters"),
+  firstName: z.string().min(2, "First name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[a-zA-Z]/, "Password must contain at least one letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
+});
+
+export const organiserRegisterSchema = z.object({
+  firstName: z.string().min(2, "First name must be at least 2 characters"),
+  lastName: z.string().min(2, "Last name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[a-zA-Z]/, "Password must contain at least one letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
+  organizationName: z.string().min(2, "College name is required"),
+  contactNumber: z.string().min(6, "Contact number is required"),
+  reason: z.string().min(10, "Reason is required"),
+});
+
+export type OrganiserRegisterInput = z.infer<typeof organiserRegisterSchema>;
+export type SubmitAdminRequestInput = z.infer<typeof submitAdminRequestSchema>;
