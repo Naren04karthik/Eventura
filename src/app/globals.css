@@ -1,6 +1,58 @@
 @import "tailwindcss";
 
 :root {
+  --ink: #050607;
+  --ink-2: #0b0f14;
+  --ink-3: #111827;
+  --neon-blue: #ff5a5f;
+  --color-neon: #ff5a5f;
+  --border-subtle: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --text-muted: rgba(255, 255, 255, 0.68);
+  --text-soft: rgba(255, 255, 255, 0.45);
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--ink);
+  color: #ffffff;
+  font-family: var(--font-sans), "Sora", "Segoe UI", sans-serif;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.bg-ink { background-color: var(--ink); }
+.bg-ink-2 { background-color: var(--ink-2); }
+.bg-ink-3 { background-color: var(--ink-3); }
+.text-muted { color: var(--text-muted); }
+.text-soft { color: var(--text-soft); }
+.text-neon { color: var(--neon-blue); }
+.bg-neon { background-color: var(--neon-blue); }
+.border-neon { border-color: var(--neon-blue); }
+.font-display { font-family: var(--font-display), var(--font-sans), sans-serif; }
+.font-mono { font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace; }
+.border-thin { border: 1px solid var(--border-subtle); }
+.border-strong { border: 1px solid var(--border-strong); }
+
+.card-glow {
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45), 0 0 40px rgba(255, 90, 95, 0.16);
+}
+
+.glass {
+  background: rgba(10, 14, 18, 0.75);
+  backdrop-filter: blur(20px);
+}
+
+:root {
   --background: #ffffff;
   --foreground: #171717;
 }
