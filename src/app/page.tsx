@@ -71,7 +71,7 @@ export default function Home() {
               <div className="mt-6 flex flex-wrap gap-3">
                 <button type="button" onClick={handleBrowseEvents} className="group relative overflow-hidden rounded-full bg-gradient-to-r from-pink-500 via-red-500 to-orange-500 p-[2px] transition hover:scale-[1.02]">
                   <span className="flex items-center gap-2 rounded-full bg-black px-5 py-2 text-sm text-white transition">
-                    Browse Events
+                    Explore Events
                     <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
