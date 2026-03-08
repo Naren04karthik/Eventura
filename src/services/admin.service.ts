@@ -2,16 +2,16 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { sendApprovalGrantedEmail, sendApprovalRequestEmail } from "@/lib/email";
 
-/**
- * Submit a request to become an admin for a college
- */
+
+//  Submit a request to become admin for a college
+
 export async function submitAdminRequest(
   collegeName: string,
   firstName: string,
   email: string,
   password: string
 ) {
-  // Check if request already exists
+  // Checking if request already exists
   const existingRequest = await prisma.adminRequest.findUnique({
     where: { email },
   });
@@ -25,7 +25,7 @@ export async function submitAdminRequest(
     }
   }
 
-  // Create the request
+  // Creating request
   const passwordHash = await bcrypt.hash(password, 10);
   const request = await prisma.adminRequest.create({
     data: {
@@ -47,9 +47,9 @@ export async function submitAdminRequest(
   return request;
 }
 
-/**
- * Get all pending admin requests (SUPERADMIN only)
- */
+
+//   pending admin requests for SUPERADMIN 
+
 export async function getPendingAdminRequests() {
   const requests = await prisma.adminRequest.findMany({
     where: {
@@ -63,9 +63,9 @@ export async function getPendingAdminRequests() {
   return requests;
 }
 
-/**
- * Create admin account from approved request (SUPERADMIN only)
- */
+
+//   Create admin account by approving request by SUPERADMIN 
+
 export async function createAdminFromRequest(
   adminRequestId: string,
   superadminId: string
