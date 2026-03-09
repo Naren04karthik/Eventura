@@ -1,34 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import { useEffect, useState, type ChangeEvent } from 'react';
+import EventCard, { EventCardData } from '@/components/events/EventCard';
 
-interface Event {
-  id: string;
-  eventCode?: string;
-  title: string;
-  description: string;
-  date: string;
-  venue: string;
-  bannerUrl?: string;
-  capacity: number;
-  visibility?: 'PUBLIC' | 'COLLEGE' | 'PRIVATE';
-  organiser: {
-    id: string;
-    firstName?: string;
-    lastName?: string;
-  };
-  college?: {
-    id: string;
-    name: string;
-  };
-  _count?: {
-    registrations: number;
-    bookmarks: number;
-  };
-  isLive?: boolean;
-}
+type Event = EventCardData;
 
 export default function BrowseEventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -38,7 +13,6 @@ export default function BrowseEventsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'popularity' | 'newest'>('date');
   const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'public' | 'college'>('all');
-  const [page, setPage] = useState(1);
 
   // Fetch all events on component mount
   useEffect(() => {
@@ -56,7 +30,7 @@ export default function BrowseEventsPage() {
       }
       
       const data = await response.json();
-      const eventsList = data.data?.events || data.events || [];
+      const eventsList: Event[] = (data.data?.events || data.events || []) as Event[];
       setEvents(eventsList);
       setFilteredEvents(eventsList);
     } catch (err) {
@@ -70,7 +44,7 @@ export default function BrowseEventsPage() {
 
   // Filter and sort events based on user selections
   useEffect(() => {
-    let results = events.filter((event) => {
+    let results: Event[] = events.filter((event: Event) => {
       // Text search filter - searches title, description, and venue
       const matchesSearch =
         event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -90,38 +64,15 @@ export default function BrowseEventsPage() {
 
     // Apply sorting
     if (sortBy === 'date') {
-      results.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      results.sort((a: Event, b: Event) => new Date(a.date).getTime() - new Date(b.date).getTime());
     } else if (sortBy === 'popularity') {
-      results.sort((a, b) => (b._count?.registrations || 0) - (a._count?.registrations || 0));
+      results.sort((a: Event, b: Event) => (b._count?.registrations || 0) - (a._count?.registrations || 0));
     } else if (sortBy === 'newest') {
-      results.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      results.sort((a: Event, b: Event) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }
 
     setFilteredEvents(results);
-    setPage(1);
   }, [searchQuery, sortBy, visibilityFilter, events]);
-
-  // Format organizer name
-  const getOrganizerName = (organiser: Event['organiser']) => {
-    const firstName = organiser?.firstName || '';
-    const lastName = organiser?.lastName || '';
-    return `${firstName} ${lastName}`.trim() || 'Unknown Organizer';
-  };
-
-  // Format date display
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    } catch {
-      return dateString;
-    }
-  };
 
   if (loading) {
     return (
@@ -194,12 +145,12 @@ export default function BrowseEventsPage() {
               type="text"
               placeholder="Search by title, description, or location..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
               className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
             />
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'date' | 'popularity' | 'newest')}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as 'date' | 'popularity' | 'newest')}
               className="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition cursor-pointer bg-white"
             >
               <option value="date">Earliest First</option>
@@ -228,85 +179,7 @@ export default function BrowseEventsPage() {
         {filteredEvents.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredEvents.map((event) => (
-              <Link key={event.id} href={`/events/${event.eventCode || event.id}`}>
-                <div className="h-full bg-white rounded-lg shadow hover:shadow-xl transition-shadow duration-300 overflow-hidden cursor-pointer hover:scale-105 transform">
-                  {/* Banner Image */}
-                  {event.bannerUrl ? (
-                    <div className="relative h-40 overflow-hidden bg-gray-200">
-                      <Image
-                        src={event.bannerUrl}
-                        alt={event.title}
-                        fill
-                        className="object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-40 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
-                      <span className="text-4xl">🎉</span>
-                    </div>
-                  )}
-
-                  {/* Content */}
-                  <div className="p-4">
-                    {/* Title */}
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600">
-                      {event.title}
-                    </h3>
-
-                    {/* Description */}
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                      {event.description}
-                    </p>
-
-                    {/* Meta Info */}
-                    <div className="space-y-2 text-sm text-gray-600">
-                      {/* Date */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">📅</span>
-                        <span>{formatDate(event.date)}</span>
-                      </div>
-
-                      {/* Location */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">📍</span>
-                        <span className="truncate">{event.venue}</span>
-                      </div>
-
-                      {/* Organizer */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">👤</span>
-                        <span className="truncate">{getOrganizerName(event.organiser)}</span>
-                      </div>
-
-                      {/* Registration Count */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">👥</span>
-                        <span>
-                          {event._count?.registrations || 0} registered
-                          {event.capacity && ` / ${event.capacity}`}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Status Badge */}
-                    <div className="mt-4 flex items-center gap-2">
-                      {event.isLive && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <span className="animate-pulse">●</span>
-                          Live
-                        </span>
-                      )}
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {event.visibility === 'PUBLIC' ? '🌍 Public' : '🎓 College'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
+              <EventCard key={event.id} event={event} variant="browse" />
             ))}
           </div>
         ) : (
