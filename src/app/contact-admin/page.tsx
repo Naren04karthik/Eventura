@@ -77,7 +77,7 @@ export default function ContactAdminPage() {
                 </div>
                 <h2 className="text-2xl font-normal mb-3">Request Submitted</h2>
                 <p className="text-muted mb-6">
-                  Your admin request has been submitted successfully. You will receive an email once it&apos;s reviewed.
+                  Your admin request has been submitted successfully. You will receive an email once it's reviewed.
                 </p>
                 <button
                   onClick={() => setSuccess(false)}
