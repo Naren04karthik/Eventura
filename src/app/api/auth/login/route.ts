@@ -13,8 +13,13 @@ export async function POST(req: NextRequest) {
     // Login user
     const { user, token } = await loginUser(data);
 
+    console.log('[/api/auth/login] Login successful for:', user.email);
+    console.log('[/api/auth/login] Token generated, setting cookie...');
+
     // Set auth cookie
     await setAuthCookie(token);
+
+    console.log('[/api/auth/login] Cookie set successfully');
 
     return NextResponse.json(
       {
@@ -26,7 +31,7 @@ export async function POST(req: NextRequest) {
     );
   } catch (error: any) {
     console.error("Login error:", error);
-
+    
     if (error.name === "ZodError") {
       return NextResponse.json(
         {

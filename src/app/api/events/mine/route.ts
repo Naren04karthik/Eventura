@@ -1,50 +1,43 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
+import { getEventsByUser } from "@/services/event.service";
 
-function resolveOrganizerId(req: NextRequest) {
-  return req.headers.get('x-user-id') || req.nextUrl.searchParams.get('organiserId');
-}
-
-export async function GET(req: NextRequest) {
+// GET /api/events/mine - Get events organised by current user
+export async function GET(_req: NextRequest) {
   try {
-    const organizerId = resolveOrganizerId(req);
+    const user = await getCurrentUser();
 
-    if (!organizerId) {
+    if (!user) {
       return NextResponse.json(
-        {
-          success: false,
-          message: 'Organizer identity is required',
-        },
+        { success: false, message: "Not authenticated" },
         { status: 401 }
       );
     }
 
-    const events = await prisma.event.findMany({
-      where: { organiserId: organizerId },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        _count: {
-          select: {
-            registrations: true,
-          },
+    const result = await getEventsByUser(user.id);
+
+    if (!result.success || !result.data) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: result.error || "Failed to fetch your events",
         },
-      },
-    });
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       {
         success: true,
-        data: { events },
+        data: { events: result.data },
       },
       { status: 200 }
     );
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to fetch organizer events';
-
+  } catch (error: any) {
     return NextResponse.json(
       {
         success: false,
-        message,
+        message: error.message || "Failed to fetch your events",
       },
       { status: 500 }
     );

@@ -27,6 +27,7 @@ export default function PublicAuthLayout({
 }: PublicAuthLayoutProps) {
   return (
     <div className="min-h-screen overflow-x-hidden bg-ink text-white flex flex-col">
+      {/* keep the public auth pages on one header/footer so they stop drifting */}
       <header className="sticky top-4 z-40">
         <div className="mx-auto w-full max-w-7xl px-6">
           <div className="relative flex items-center justify-between rounded-2xl border border-white/10 bg-black/70 px-7 py-3.5 shadow-[0_20px_60px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.18),inset_1px_0_0_rgba(255,255,255,0.12),inset_-1px_0_0_rgba(255,255,255,0.12)] backdrop-blur">

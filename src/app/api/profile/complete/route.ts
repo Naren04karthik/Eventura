@@ -11,30 +11,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if profile already completed
-    if (user.isProfileComplete) {
-      const token = await generateToken({
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        isProfileComplete: true,
-      });
-
-      const response = NextResponse.json({
-        message: "Profile already completed",
-      });
-
-      response.cookies.set("auth_token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60,
-        path: "/",
-      });
-
-      return response;
-    }
+    const isSecure = process.env.SECURE_COOKIE === 'true' || (process.env.NODE_ENV === 'production' && process.env.SECURE_COOKIE !== 'false');
 
     // Parse and validate request body
     const body = await req.json();
@@ -42,8 +19,25 @@ export async function POST(req: NextRequest) {
 
     // Create profile and update user in a transaction
     await prisma.$transaction(async (tx) => {
-      await tx.profile.create({
-        data: {
+      await tx.profile.upsert({
+        where: { userId: user.id },
+        update: {
+          firstName: validatedData.firstName,
+          lastName: validatedData.lastName,
+          whatsapp: validatedData.whatsapp,
+          gender: validatedData.gender || null,
+          dateOfBirth: new Date(validatedData.dateOfBirth),
+          college: validatedData.college,
+          year: validatedData.year,
+          branch: validatedData.branch,
+          customBranch: validatedData.branch === "OTHER" ? validatedData.customBranch || null : null,
+          collegeId: validatedData.collegeId,
+          city: validatedData.city,
+          state: validatedData.state,
+          country: validatedData.country,
+          profilePhoto: validatedData.profilePhoto || null,
+        },
+        create: {
           userId: user.id,
           firstName: validatedData.firstName,
           lastName: validatedData.lastName,
@@ -64,7 +58,11 @@ export async function POST(req: NextRequest) {
 
       await tx.user.update({
         where: { id: user.id },
-        data: { isProfileComplete: true },
+        data: { 
+          isProfileComplete: true,
+          firstName: validatedData.firstName,
+          lastName: validatedData.lastName,
+         },
       });
     });
 
@@ -82,7 +80,7 @@ export async function POST(req: NextRequest) {
 
     response.cookies.set("auth_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isSecure,
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60,
       path: "/",

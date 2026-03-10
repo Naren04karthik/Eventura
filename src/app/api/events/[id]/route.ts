@@ -1,216 +1,160 @@
+// API Route: GET /api/events/[id] (get single), PUT (update), DELETE (delete)
+
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { updateEventSchema } from '@/lib/validations';
+import { getEventById, updateEvent, deleteEvent } from '@/services/event.service';
 
-type UpdateEventBody = {
-  title?: string;
-  description?: string;
-  date?: string;
-  venue?: string;
-  collegeId?: string;
-  bannerUrl?: string;
-  capacity?: number | null;
-  isPaid?: boolean;
-  ticketPrice?: number | null;
-  registrationType?: string;
-  teamRequired?: boolean;
-  minTeamSize?: number;
-  maxTeamSize?: number;
-  tags?: string;
-  customRegistrationFields?: string;
-  organiserId?: string;
-};
-
-function resolveOrganizerId(req: NextRequest, bodyOrganizerId?: string) {
-  return req.headers.get('x-user-id') || bodyOrganizerId || req.nextUrl.searchParams.get('organiserId');
-}
-
-// built a put request for event updation and removal 
-
-export async function PUT(
-  req: NextRequest,
+// GET /api/events/[id] - Get single event
+export async function GET(
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const body = (await req.json()) as UpdateEventBody;
-    const organizerId = resolveOrganizerId(req, body.organiserId);
+    const result = await getEventById(id);
 
-    if (!organizerId) {
+    if (!result.success) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Organizer identity is required',
-        },
-        { status: 401 }
-      );
-    }
-
-    const existingEvent = await prisma.event.findUnique({
-      where: { id },
-      select: { id: true, organiserId: true },
-    });
-
-    if (!existingEvent) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Event not found',
+          error: result.error,
         },
         { status: 404 }
       );
     }
 
-    if (existingEvent.organiserId !== organizerId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Not authorized to update this event',
-        },
-        { status: 403 }
-      );
-    }
-
-    const updateData: {
-      title?: string;
-      description?: string | null;
-      date?: Date;
-      venue?: string;
-      collegeId?: string | null;
-      bannerUrl?: string | null;
-      capacity?: number | null;
-      isPaid?: boolean;
-      ticketPrice?: string | null;
-      registrationType?: string;
-      teamRequired?: boolean;
-      minTeamSize?: number;
-      maxTeamSize?: number;
-      tags?: string | null;
-      customRegistrationFields?: string | null;
-    } = {};
-
-    if (body.title !== undefined) updateData.title = body.title;
-    if (body.description !== undefined) updateData.description = body.description;
-    if (body.venue !== undefined) updateData.venue = body.venue;
-    if (body.collegeId !== undefined) updateData.collegeId = body.collegeId;
-    if (body.bannerUrl !== undefined) updateData.bannerUrl = body.bannerUrl;
-    if (body.capacity !== undefined) updateData.capacity = body.capacity;
-    if (body.isPaid !== undefined) updateData.isPaid = body.isPaid;
-    if (body.registrationType !== undefined) updateData.registrationType = body.registrationType;
-    if (body.teamRequired !== undefined) updateData.teamRequired = body.teamRequired;
-    if (body.minTeamSize !== undefined) updateData.minTeamSize = body.minTeamSize;
-    if (body.maxTeamSize !== undefined) updateData.maxTeamSize = body.maxTeamSize;
-    if (body.tags !== undefined) updateData.tags = body.tags;
-    if (body.customRegistrationFields !== undefined) {
-      updateData.customRegistrationFields = body.customRegistrationFields;
-    }
-
-    if (body.date !== undefined) {
-      const parsedDate = new Date(body.date);
-      if (Number.isNaN(parsedDate.getTime())) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: 'Invalid event date',
-          },
-          { status: 400 }
-        );
-      }
-      updateData.date = parsedDate;
-    }
-
-    if (body.isPaid === false) {
-      updateData.ticketPrice = null;
-    } else if (body.ticketPrice !== undefined) {
-      updateData.ticketPrice = String(body.ticketPrice);
-    }
-
-    const event = await prisma.event.update({
-      where: { id },
-      data: updateData,
-    });
-
     return NextResponse.json(
       {
         success: true,
-        message: 'Event updated successfully',
-        data: { event },
+        data: result.data,
       },
       { status: 200 }
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to update event';
-
+    console.error('Get event by ID API error:', error);
     return NextResponse.json(
       {
         success: false,
-        message,
+        error: 'Internal server error',
       },
       { status: 500 }
     );
   }
 }
 
-export async function DELETE(
-  req: NextRequest,
+// PUT /api/events/[id] - Update event
+export async function PUT(
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const organizerId = resolveOrganizerId(req);
+    const userId = request.headers.get('x-user-id');
 
-    if (!organizerId) {
+    if (!userId) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Organizer identity is required',
+          error: 'Not authenticated',
         },
         { status: 401 }
       );
     }
 
-    const existingEvent = await prisma.event.findUnique({
-      where: { id },
-      select: { id: true, organiserId: true },
-    });
+    // Parse request body
+    const body = await request.json();
 
-    if (!existingEvent) {
+    // Validate input
+    const validated = updateEventSchema.safeParse(body);
+
+    if (!validated.success) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Event not found',
+          error: 'Validation failed',
+          details: validated.error.errors,
         },
-        { status: 404 }
+        { status: 400 }
       );
     }
 
-    if (existingEvent.organiserId !== organizerId) {
+    // Update event
+    const result = await updateEvent(id, userId, validated.data);
+
+    if (!result.success) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Not authorized to delete this event',
+          error: result.error,
         },
-        { status: 403 }
+        { status: result.error === 'Event not found' ? 404 : 403 }
       );
     }
-
-    await prisma.event.delete({
-      where: { id },
-    });
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Event deleted successfully',
+        data: result.data,
       },
       { status: 200 }
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to delete event';
-
+    console.error('Update event API error:', error);
     return NextResponse.json(
       {
         success: false,
-        message,
+        error: 'Internal server error',
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/events/[id] - Delete event
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const userId = request.headers.get('x-user-id');
+
+    if (!userId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Not authenticated',
+        },
+        { status: 401 }
+      );
+    }
+
+    // Delete event
+    const result = await deleteEvent(id, userId);
+
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: result.error,
+        },
+        { status: result.error === 'Event not found' ? 404 : 403 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: result.data,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Delete event API error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error',
       },
       { status: 500 }
     );

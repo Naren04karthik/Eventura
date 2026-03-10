@@ -139,7 +139,7 @@ export default function RegisterPage() {
       const { confirmPassword, organizationChoice, collegeChoice, ...registerData } = formData;
 
       // Create payload based on role
-      const payload: Record<string, unknown> = {
+      const payload: any = {
         firstName: registerData.firstName,
         lastName: registerData.lastName,
         email: registerData.email,
@@ -394,7 +394,7 @@ export default function RegisterPage() {
                       value={formData.contactNumber}
                       onChange={handleChange}
                       placeholder="+91 9876543210"
-                      className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-white placeholder:text-soft focus:border-neon focus:outline-none transition"
+                        className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-white placeholder:text-soft focus:border-neon focus:outline-none transition"
                       required
                     />
                   </div>

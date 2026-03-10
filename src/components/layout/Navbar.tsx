@@ -71,8 +71,8 @@ export default function Navbar({ user, minimalHome = false }: NavbarProps) {
   };
   const getNavLinkClass = (href: string) => {
     const baseClass = "text-sm font-medium transition";
-    return isActive(href)
-      ? `${baseClass} text-neon font-semibold`
+    return isActive(href) 
+      ? `${baseClass} text-neon font-semibold` 
       : `${baseClass} text-muted hover:text-white`;
   };
 

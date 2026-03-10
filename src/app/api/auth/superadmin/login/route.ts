@@ -3,6 +3,10 @@ import { loginSuperadmin } from "@/services/auth.service";
 import { superadminLoginSchema } from "@/lib/validations";
 import { setAuthCookie } from "@/lib/auth";
 
+/**
+ * POST /api/auth/superadmin/login
+ * SUPERADMIN login with hardcoded credentials
+ */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

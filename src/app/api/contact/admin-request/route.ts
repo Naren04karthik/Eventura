@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { submitAdminRequest } from "@/services/admin.service";
 import { submitAdminRequestSchema } from "@/lib/validations";
 
+/**
+ * POST /api/contact/admin-request
+ * Submit admin request from "Contact Us" form
+ */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

@@ -2,9 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { sendEventRegistrationSuccessEmail } from "@/lib/email";
 import crypto from "crypto";
 
-
- //register user for event
-
+/**
+ * Register user for event
+ */
 export async function registerForEvent(
   userId: string,
   eventId: string,
@@ -12,7 +12,7 @@ export async function registerForEvent(
   paymentScreenshot?: string,
   transactionId?: string
 ) {
-  // check event exists
+  // Check event exists
   const event = await prisma.event.findUnique({
     where: { id: eventId },
   });
@@ -21,12 +21,12 @@ export async function registerForEvent(
     throw new Error("Event not found");
   }
 
-  // check event date is in future
+  // Check event date is in future
   if (event.date < new Date()) {
     throw new Error("Event registration closed");
   }
 
-  // check user not already registered
+  // Check user not already registered
   const existing = await prisma.registration.findFirst({
     where: { userId, eventId, status: "CONFIRMED" },
   });
@@ -35,7 +35,7 @@ export async function registerForEvent(
     throw new Error("Already registered for this event");
   }
 
-  // check capacity
+  // Check capacity
   const registrationCount = await prisma.registration.count({
     where: { eventId, status: "CONFIRMED" },
   });
@@ -44,10 +44,10 @@ export async function registerForEvent(
     throw new Error("Event is full");
   }
 
-  // generate QR token
+  // Generate QR token
   const qrToken = crypto.randomUUID();
 
-  // create registration
+  // Create registration
   const registration = await prisma.registration.create({
     data: {
       userId,
@@ -68,17 +68,15 @@ export async function registerForEvent(
     },
   });
 
-  // send confirmation email (stubbed)
-  await sendEventRegistrationSuccessEmail(registration.user.email, registration.event.title);
 
-
+  await sendEventRegistrationSuccessEmail(registration.user.email, event.title);
 
   return registration;
 }
 
-
-//get user registrations
- 
+/**
+ * Get user's registrations
+ */
 export async function getUserRegistrations(userId: string) {
   return prisma.registration.findMany({
     where: { userId },
@@ -101,9 +99,9 @@ export async function getUserRegistrations(userId: string) {
   });
 }
 
-
- //get event registrations (organizer view)
-
+/**
+ * Get event registrations (organizer view)
+ */
 export async function getEventRegistrations(eventId: string, page = 1, limit = 50) {
   const skip = (page - 1) * limit;
 
@@ -139,14 +137,15 @@ export async function getEventRegistrations(eventId: string, page = 1, limit = 5
   };
 }
 
-//mark attendance for registration
-
+/**
+ * Mark attendance for registration
+ */
 export async function markAttendance(
   eventId: string,
   qrToken: string,
   organiserId: string
 ) {
-  // verify organiser owns event
+  // Verify organiser owns event
   const event = await prisma.event.findUnique({
     where: { id: eventId },
   });
@@ -159,7 +158,7 @@ export async function markAttendance(
     throw new Error("Unauthorized: You don't own this event");
   }
 
-  // find registration
+  // Find registration
   const registration = await prisma.registration.findFirst({
     where: { eventId, qrCode: qrToken },
     include: {
@@ -177,7 +176,7 @@ export async function markAttendance(
     throw new Error("Attendance already marked");
   }
 
-  // mark attendance
+  // Mark attendance
   const updated = await prisma.registration.update({
     where: { id: registration.id },
     data: { status: 'ATTENDED' },
@@ -194,9 +193,9 @@ export async function markAttendance(
   return updated;
 }
 
-
- //cancel registration
-
+/**
+ * Cancel registration
+ */
 export async function cancelRegistration(
   registrationId: string,
   userId: string

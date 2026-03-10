@@ -1,110 +1,175 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
+import { createEventSchema, exploreEventsSchema } from "@/lib/validations";
+import { createEvent, getEvents } from "@/services/event.service";
+import { prisma } from "@/lib/prisma";
 
-// added a route for creating new event 
-type CreateEventBody = {
-  title?: string;
-  description?: string;
-  date?: string;
-  venue?: string;
-  organiserId?: string;
-  collegeId?: string;
-  bannerUrl?: string;
-  capacity?: number | null;
-  isPaid?: boolean;
-  ticketPrice?: number | null;
-  registrationType?: string;
-  teamRequired?: boolean;
-  minTeamSize?: number;
-  maxTeamSize?: number;
-  tags?: string;
-  customRegistrationFields?: string;
-};
-
-function buildEventCode() {
-  return Math.random().toString(36).slice(2, 10);
-}
-
-async function generateUniqueEventCode() {
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    const code = buildEventCode();
-    const existing = await prisma.event.findUnique({
-      where: { eventCode: code },
-      select: { id: true },
-    });
-
-    if (!existing) {
-      return code;
-    }
-  }
-
-  throw new Error('Failed to generate unique event code');
-}
-
-export async function POST(req: NextRequest) {
+// GET /api/events - Browse all events
+export async function GET(req: NextRequest) {
   try {
-    const body = (await req.json()) as CreateEventBody;
+    const searchParams = req.nextUrl.searchParams;
+    
+    const queryParams = {
+      page: searchParams.get("page") || "1",
+      limit: searchParams.get("limit") || "20",
+      search: searchParams.get("search") || undefined,
+      filter: searchParams.get("filter") || undefined,
+      college: searchParams.get("college") || undefined,
+    };
 
-    if (!body.title || !body.date || !body.venue || !body.organiserId) {
+    const data = exploreEventsSchema.parse(queryParams);
+    
+    const result = await getEvents({
+      search: data.search,
+      filter: data.filter,
+      collegeId: data.college,
+    }, data.page, data.limit);
+
+    if (!result.success || !result.data) {
       return NextResponse.json(
         {
           success: false,
-          message: 'title, date, venue and organiserId are required',
+          message: result.error || "Failed to fetch events",
         },
-        { status: 400 }
+        { status: 500 }
       );
     }
-
-    const parsedDate = new Date(body.date);
-    if (Number.isNaN(parsedDate.getTime())) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Invalid event date',
-        },
-        { status: 400 }
-      );
-    }
-
-    const eventCode = await generateUniqueEventCode();
-
-    const event = await prisma.event.create({
-      data: {
-        eventCode,
-        title: body.title,
-        description: body.description,
-        date: parsedDate,
-        venue: body.venue,
-        organiserId: body.organiserId,
-        collegeId: body.collegeId,
-        bannerUrl: body.bannerUrl,
-        capacity: body.capacity ?? null,
-        isPaid: Boolean(body.isPaid),
-        ticketPrice: body.isPaid ? String(body.ticketPrice ?? 0) : null,
-        registrationType: body.registrationType ?? 'SOLO',
-        teamRequired: Boolean(body.teamRequired),
-        minTeamSize: body.minTeamSize ?? 1,
-        maxTeamSize: body.maxTeamSize ?? 5,
-        tags: body.tags,
-        customRegistrationFields: body.customRegistrationFields,
-      },
-    });
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Event created successfully',
-        data: { event },
+        data: result.data,
+      },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error("Get events error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        message: error.message || "Failed to fetch events",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/events - Create new event (ORGANIZER only)
+export async function POST(req: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Not authenticated" },
+        { status: 401 }
+      );
+    }
+
+    if (user.role !== "ORGANIZER") {
+      return NextResponse.json(
+        { success: false, message: "Only organizers can create events" },
+        { status: 403 }
+      );
+    }
+
+    if (user.status !== "ACTIVE") {
+      return NextResponse.json(
+        { success: false, message: "Organizer account is not approved" },
+        { status: 403 }
+      );
+    }
+
+    let organizerCollegeId = user.collegeId;
+
+    // Backfill missing organizer college for legacy approvals.
+    if (!organizerCollegeId) {
+      const latestRequest = await prisma.organizerRequest.findFirst({
+        where: { userId: user.id },
+        orderBy: [{ reviewedAt: "desc" }, { createdAt: "desc" }],
+        select: { organizationName: true },
+      });
+
+      const collegeName = latestRequest?.organizationName?.trim();
+
+      if (collegeName) {
+        const existingCollege = await prisma.college.findFirst({
+          where: {
+            name: {
+              equals: collegeName,
+              mode: "insensitive",
+            },
+          },
+          select: { id: true },
+        });
+
+        const resolvedCollege =
+          existingCollege ||
+          (await prisma.college.create({
+            data: { name: collegeName },
+            select: { id: true },
+          }));
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { collegeId: resolvedCollege.id },
+        });
+
+        organizerCollegeId = resolvedCollege.id;
+      }
+    }
+
+    if (!organizerCollegeId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "User must belong to a college. Ask admin to re-approve with a college.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const body = await req.json();
+    const data = createEventSchema.parse(body);
+
+    const result = await createEvent(data, user.id, organizerCollegeId);
+
+    if (!result.success || !result.data) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: result.error || "Failed to create event",
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Event created successfully",
+        data: { event: result.data },
       },
       { status: 201 }
     );
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to create event';
+  } catch (error: any) {
+    console.error("Create event error:", error);
+    
+    if (error.name === "ZodError") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Validation error",
+          errors: error.errors,
+        },
+        { status: 400 }
+      );
+    }
 
     return NextResponse.json(
       {
         success: false,
-        message,
+        message: error.message || "Failed to create event",
       },
       { status: 500 }
     );

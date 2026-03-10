@@ -5,11 +5,11 @@ import { prisma } from "@/lib/prisma";
 import QRCode from "qrcode";
 
 const getAuthenticatedUser = async (req: NextRequest) => {
-  // signed auth cookie.
+  // Primary source: signed auth cookie.
   const cookieUser = await getCurrentUser();
   if (cookieUser) return cookieUser;
 
-  // middleware-injected identity headers.
+  // Fallback source: middleware-injected identity headers.
   const userId = req.headers.get("x-user-id");
   if (!userId) return null;
 

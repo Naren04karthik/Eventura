@@ -544,7 +544,7 @@ export default function CompleteProfilePage() {
                       onChange={handleChange}
                       className="w-full rounded-xl border border-white/10 bg-black px-4 py-2.5 text-white focus:border-neon focus:outline-none focus:ring-2 focus:ring-neon/20 [&>option]:bg-[#0a0a0a] [&>option]:text-white"
                     >
-                      {PROFILE_YEARS.map((year: number) => (
+                      {PROFILE_YEARS.map((year) => (
                         <option key={year} value={year}>
                           Year {year}
                         </option>
@@ -565,7 +565,7 @@ export default function CompleteProfilePage() {
                       className="w-full rounded-xl border border-white/10 bg-black px-4 py-2.5 text-white focus:border-neon focus:outline-none focus:ring-2 focus:ring-neon/20 [&>option]:bg-[#0a0a0a] [&>option]:text-white"
                     >
                       <option value="">Select Branch</option>
-                      {PROFILE_BRANCHES.map((branch: typeof PROFILE_BRANCHES[number]) => (
+                      {PROFILE_BRANCHES.map((branch) => (
                         <option key={branch.value} value={branch.value}>
                           {branch.label}
                         </option>
@@ -664,7 +664,7 @@ export default function CompleteProfilePage() {
               {/* Profile Photo */}
               <div className="space-y-4">
                 <h2 className="text-lg font-medium text-white">Profile Photo</h2>
-
+                
                 {/* Image Preview */}
                 {imagePreview && (
                   <div className="flex justify-center">

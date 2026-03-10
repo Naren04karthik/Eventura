@@ -1,190 +1,241 @@
 'use client';
 
-import { useEffect, useState, type ChangeEvent } from 'react';
-import EventCard, { EventCardData } from '@/components/events/EventCard';
-import { filterByVisibility, searchEvents, sortBrowseEvents } from '@/lib/explore-utils';
-
-type Event = EventCardData;
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
+import EventPreviewCard from '@/components/layout/EventPreviewCard';
+import { useAuth } from '@/contexts/auth-context';
+import type { BrowseEvent } from '@/types';
 
 export default function BrowseEventsPage() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
+  const { user } = useAuth();
+  const [events, setEvents] = useState<BrowseEvent[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<BrowseEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'date' | 'popularity' | 'newest'>('date');
+  const [sortBy, setSortBy] = useState<'date' | 'popularity'>('date');
   const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'public' | 'college'>('all');
 
-  // Fetch all events on component mount
   useEffect(() => {
     fetchEvents();
   }, []);
 
   const fetchEvents = async () => {
     try {
-      setLoading(true);
-      setError(null);
       const response = await fetch('/api/events?page=1&limit=100');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch events');
+      if (response.ok) {
+        const data = await response.json();
+        const eventsList = data.data?.events || data.events || [];
+        setEvents(eventsList);
+        setFilteredEvents(eventsList);
       }
-      
-      const data = await response.json();
-      const eventsList: Event[] = (data.data?.events || data.events || []) as Event[];
-      setEvents(eventsList);
-      setFilteredEvents(eventsList);
-    } catch (err) {
-      console.error('Error fetching events:', err);
-      setError('Failed to load events. Please try again.');
-      setEvents([]);
+    } catch (error) {
+      console.error('Failed to fetch events:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter and sort events based on user selections
   useEffect(() => {
-    const searched = searchEvents(events, searchQuery);
-    const visibilityApplied = filterByVisibility(searched, visibilityFilter);
-    const results = sortBrowseEvents(visibilityApplied, sortBy);
+    let results = events.filter((event) => {
+      // Text search filter
+      const matchesSearch =
+        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.venue.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Visibility filter
+      let matchesVisibility = true;
+      if (visibilityFilter !== 'all') {
+        try {
+          const customFields = event.customRegistrationFields 
+            ? JSON.parse(event.customRegistrationFields) 
+            : null;
+          const visibility = customFields?.visibility?.mode || 'Public';
+          
+          if (visibilityFilter === 'public') {
+            matchesVisibility = visibility === 'Public';
+          } else if (visibilityFilter === 'college') {
+            matchesVisibility = visibility === 'College' || visibility === 'Custom';
+          }
+        } catch {
+          // If metadata is malformed, keep event visible instead of failing the filter.
+          matchesVisibility = true;
+        }
+      }
+
+      return matchesSearch && matchesVisibility;
+    });
+
+    if (sortBy === 'date') {
+      results.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    } else {
+      results.sort((a, b) => b._count.registrations - a._count.registrations);
+    }
 
     setFilteredEvents(results);
   }, [searchQuery, sortBy, visibilityFilter, events]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading events...</p>
-        </div>
+      <div className="min-h-screen bg-ink flex items-center justify-center">
+        <div className="text-white">Loading events...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
-      {/* Header Section */}
-      <header className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Browse Events</h1>
-              <p className="text-gray-600 text-sm mt-1">
-                {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''} found
-              </p>
+    <div className="min-h-screen bg-ink text-white flex flex-col">
+      {/* Header */}
+      {user ? (
+        <Navbar user={user} />
+      ) : (
+        <header className="sticky top-4 z-40">
+          <div className="mx-auto w-full max-w-7xl px-6">
+            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/70 px-7 py-3.5 shadow-[0_20px_60px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.18),inset_1px_0_0_rgba(255,255,255,0.12),inset_-1px_0_0_rgba(255,255,255,0.12)] backdrop-blur">
+              <Link href="/" className="flex items-center hover:opacity-80 transition" aria-label="Home">
+                <Image
+                  src="/branding/logo_dark_no_bg..svg"
+                  alt="Eventura"
+                  width={144}
+                  height={36}
+                  className="h-9 w-auto"
+                  priority
+                />
+              </Link>
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/login"
+                  className="rounded-full border-thin px-4 py-2 text-sm text-muted transition hover:text-white hover:shadow-[0_0_0_1px_rgba(255,255,255,0.9)]"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/register"
+                  className="rounded-lg border-strong bg-white/10 px-4 py-2 text-sm text-white transition hover:shadow-[0_0_0_1px_rgba(255,255,255,0.9)]"
+                >
+                  Register
+                </Link>
+              </div>
             </div>
-            <button
-              onClick={fetchEvents}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-            >
-              Refresh
-            </button>
           </div>
+        </header>
+      )}
 
+      <main className="flex-1 mx-auto w-full max-w-7xl px-6 py-8">
+        {/* Filter Tabs and Search Row */}
+        <div className="mb-8">
           {/* Visibility Filter Tabs */}
-          <div className="flex gap-2 flex-wrap mb-4">
+          <div className="flex gap-3 mb-6">
             <button
               onClick={() => setVisibilityFilter('all')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                 visibilityFilter === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'border border-neon text-neon'
+                  : 'bg-white/5 text-muted hover:bg-white/10 hover:text-white'
               }`}
             >
-              All Events
+              All
             </button>
             <button
               onClick={() => setVisibilityFilter('public')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                 visibilityFilter === 'public'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'border border-neon text-neon'
+                  : 'bg-white/5 text-muted hover:bg-white/10 hover:text-white'
               }`}
             >
-              🌍 Public
+              <span className="flex items-center gap-1.5">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Public
+              </span>
             </button>
             <button
               onClick={() => setVisibilityFilter('college')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                 visibilityFilter === 'college'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'border border-neon text-neon'
+                  : 'bg-white/5 text-muted hover:bg-white/10 hover:text-white'
               }`}
             >
-              🎓 College
+              <span className="flex items-center gap-1.5">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+                </svg>
+                College
+              </span>
             </button>
           </div>
 
           {/* Search and Sort Row */}
-          <div className="flex gap-3 flex-col sm:flex-row">
-            <input
-              type="text"
-              placeholder="Search by title, description, or location..."
-              value={searchQuery}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            />
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Search by title, description, or location..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-lg text-white text-sm placeholder-white/40 focus:outline-none focus:border-white/30 transition"
+              />
+            </div>
             <select
               value={sortBy}
-              onChange={(e: ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as 'date' | 'popularity' | 'newest')}
-              className="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition cursor-pointer bg-white"
+              onChange={(e) => setSortBy(e.target.value as 'date' | 'popularity')}
+              className="px-4 py-2.5 bg-black/40 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-white/30 transition cursor-pointer"
             >
-              <option value="date">Earliest First</option>
-              <option value="newest">Newest First</option>
-              <option value="popularity">Most Popular</option>
+              <option value="date">Sort by Date</option>
+              <option value="popularity">Sort by Popularity</option>
             </select>
           </div>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
-            <button
-              onClick={fetchEvents}
-              className="ml-4 underline hover:no-underline font-medium"
-            >
-              Try Again
-            </button>
-          </div>
-        )}
 
         {/* Events Grid */}
         {filteredEvents.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredEvents.map((event) => (
-              <EventCard key={event.id} event={event} variant="browse" />
-            ))}
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredEvents.map((event) => {
+              const organizerName = `${event.organiser.firstName} ${event.organiser.lastName}`.trim();
+
+              return (
+                <EventPreviewCard
+                  key={event.id}
+                  href={`/events/${event.eventCode}`}
+                  title={event.title}
+                  date={event.date}
+                  venue={event.venue}
+                  bannerUrl={event.bannerUrl}
+                  registrationCount={event._count.registrations}
+                  organizerName={organizerName}
+                  customRegistrationFields={event.customRegistrationFields}
+                  isLive={Boolean(event.isLive)}
+                />
+              );
+            })}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">🔍</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">No events found</h2>
-            <p className="text-gray-600 mb-6">
-              {searchQuery
-                ? `No events match "${searchQuery}". Try adjusting your search or filters.`
-                : 'No events are currently available.'}
+          <div className="rounded-lg border border-white/10 bg-black/30 p-12 text-center">
+            <p className="text-muted mb-4">
+              {searchQuery ? 'No events found matching your search' : 'No events available'}
             </p>
-            {(searchQuery || visibilityFilter !== 'all') && (
+            {searchQuery && (
               <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setVisibilityFilter('all');
-                }}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                Reset Filters
+                onClick={() => setSearchQuery('')}
+                className="px-4 py-2 bg-neon text-black rounded-lg hover:bg-neon/80 transition text-sm font-medium">
+                Clear Search
               </button>
             )}
           </div>
         )}
       </main>
+      
+      <div className="mt-auto">
+        <Footer />
+      </div>
     </div>
   );
 }
-
-

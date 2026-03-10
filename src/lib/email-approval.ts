@@ -62,12 +62,44 @@ export async function sendApprovalGrantedEmail(params: ApprovalGrantedEmailParam
         <html>
           <head>
             <style>
-              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #222; }
-              .container { max-width: 600px; margin: 0 auto; padding: 24px; background-color: #f8f9fb; }
-              .header { background: #050607; color: #5ad7ff; padding: 24px; border-radius: 10px 10px 0 0; text-align: center; }
-              .content { background: #ffffff; padding: 24px; border-radius: 0 0 10px 10px; }
-              .button { display: inline-block; background-color: #5ad7ff; color: #050607; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; }
-              .footer { text-align: center; margin-top: 24px; color: #777; font-size: 12px; }
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                line-height: 1.6;
+                color: #222;
+              }
+              .container {
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 24px;
+                background-color: #f8f9fb;
+              }
+              .header {
+                background: #050607;
+                color: #5ad7ff;
+                padding: 24px;
+                border-radius: 10px 10px 0 0;
+                text-align: center;
+              }
+              .content {
+                background: #ffffff;
+                padding: 24px;
+                border-radius: 0 0 10px 10px;
+              }
+              .button {
+                display: inline-block;
+                background-color: #5ad7ff;
+                color: #050607;
+                padding: 12px 24px;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: 600;
+              }
+              .footer {
+                text-align: center;
+                margin-top: 24px;
+                color: #777;
+                font-size: 12px;
+              }
             </style>
           </head>
           <body>
@@ -80,15 +112,29 @@ export async function sendApprovalGrantedEmail(params: ApprovalGrantedEmailParam
                 <p>Hi <strong>${params.recipientName}</strong>,</p>
                 <p>${contextLine}</p>
                 <p>Visit Eventura to sign in with your account.</p>
-                <p><a class="button" href="${loginUrl}">Sign in to Eventura</a></p>
+                <p>
+                  <a class="button" href="${loginUrl}">Sign in to Eventura</a>
+                </p>
                 <p>Best regards,<br><strong>Eventura</strong></p>
               </div>
-              <div class="footer"><p>Eventura Notifications</p></div>
+              <div class="footer">
+                <p>Eventura Notifications</p>
+              </div>
             </div>
           </body>
         </html>
       `,
-      text: `${title}\n\nHi ${params.recipientName},\n\n${contextLine}\n\nVisit Eventura to sign in: ${loginUrl}\n\nEventura Notifications`,
+      text: `
+${title}
+
+Hi ${params.recipientName},
+
+${contextLine}
+
+Visit Eventura to sign in with your account: ${loginUrl}
+
+Eventura Notifications
+      `,
     });
   } catch (error) {
     console.error('Error sending approval granted email:', error);

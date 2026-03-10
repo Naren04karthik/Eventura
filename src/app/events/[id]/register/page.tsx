@@ -130,21 +130,10 @@ export default function RegisterForEventPage() {
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<Record<string, any>>({});
 
-  // added for QR / registration‑status
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
-  const [qrRawData, setQrRawData] = useState<string | null>(null);
-
   useEffect(() => {
     loadUser();
     loadEvent();
   }, [params.id]);
-
-  useEffect(() => {
-    if (user && event) {
-      checkRegistration();
-    }
-  }, [user, event]);
 
   useEffect(() => {
     if (!user || customFields.length === 0) {
@@ -265,28 +254,13 @@ export default function RegisterForEventPage() {
       return matchOption(branch);
     }
     if (hasAny('college', 'institute', 'university') && !hasAny('college id')) return college;
-    if (hasAny('gender', 'sex')) return matchOption(currentProfile?.gender);
+    if (hasAny('gender', 'sex')) return matchOption(currentProfile?.gender || undefined);
     if (hasAny('date of birth', 'dob', 'birth')) return dob;
-    if (hasAny('city')) return currentProfile?.city;
-    if (hasAny('state')) return currentProfile?.state;
-    if (hasAny('country')) return currentProfile?.country;
+    if (hasAny('city')) return currentProfile?.city || undefined;
+    if (hasAny('state')) return currentProfile?.state || undefined;
+    if (hasAny('country')) return currentProfile?.country || undefined;
 
     return undefined;
-  };
-
-  const checkRegistration = async () => {
-    try {
-      const res = await fetch(`/api/events/${params.id}/register`);
-      if (!res.ok) return;
-      const data = await res.json();
-      setIsRegistered(Boolean(data.isRegistered));
-      if (data.isRegistered && data.data) {
-        if (data.data.qrCode) setQrCodeImage(data.data.qrCode);
-        if (data.data.qrData) setQrRawData(data.data.qrData);
-      }
-    } catch (err) {
-      console.error('Failed to check registration', err);
-    }
   };
 
   const loadUser = async () => {
@@ -433,10 +407,7 @@ export default function RegisterForEventPage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setIsRegistered(Boolean(data.isRegistered));
-        if (data.data?.qrCode) setQrCodeImage(data.data.qrCode);
-        if (data.data?.qrData) setQrRawData(data.data.qrData);
+        router.push(`/events/${params.id}`);
       } else {
         const data = await response.json();
         setError(data.message || 'Registration failed');
@@ -446,16 +417,6 @@ export default function RegisterForEventPage() {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const downloadQr = () => {
-    if (!qrCodeImage) return;
-    const link = document.createElement('a');
-    link.href = qrCodeImage;
-    link.download = `registration_qr_${params.id}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const renderField = (field: CustomField) => {
@@ -516,7 +477,7 @@ export default function RegisterForEventPage() {
 
       case 'checkbox':
         return (
-          <label className="flex items.center gap-3">
+          <label className="flex items-center gap-3">
             <input
               type="checkbox"
               checked={Boolean(formData[field.id])}
@@ -615,141 +576,123 @@ export default function RegisterForEventPage() {
             )}
           </div>
 
-          {isRegistered ? (
-            <div className="text-center py-12">
-              <p className="text-green-400 mb-4">You're registered for this event.</p>
-              {qrCodeImage && (
-                <div className="mb-4">
-                  <img src={qrCodeImage} alt="QR Code" className="mx-auto" />
-                </div>
-              )}
-              {qrCodeImage && (
-                <button
-                  onClick={downloadQr}
-                  className="px-6 py-3 bg-neon text-black font-semibold rounded-lg hover:bg-neon/80 transition"
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">
+                {error}
+              </div>
+            )}
+
+            {registrationSource === 'GOOGLE_FORM' && externalFormUrl && (
+              <div className="rounded-xl border border-amber-300/30 bg-amber-500/10 p-5">
+                <h2 className="text-lg font-semibold text-amber-100">Registration via Google Form</h2>
+                <p className="mt-2 text-sm text-amber-100/90">
+                  This event uses an external registration form. Click below to continue.
+                </p>
+                <a
+                  href={externalFormUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber-300 px-4 py-2 text-sm font-semibold text-black transition hover:bg-amber-200"
                 >
-                  Download QR Code
-                </button>
+                  Open Google Form
+                </a>
+              </div>
+            )}
+
+            {registrationSource === 'GOOGLE_FORM' && !externalFormUrl && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+                Registration is configured as Google Form, but the form URL is missing.
+              </div>
+            )}
+
+            {registrationSource === 'WEBSITE' && (
+              <>
+
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold">Registration Information</h2>
+
+              {/* Basic fields - always shown */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Full Name *</label>
+                <input
+                  type="text"
+                  value={`${user.firstName || ''} ${user.lastName || ''}`.trim() || user.name || ''}
+                  disabled
+                  className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-lg opacity-60"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Email *</label>
+                <input
+                  type="email"
+                  value={user.email}
+                  disabled
+                  className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-lg opacity-60"
+                />
+              </div>
+
+              {/* Custom fields */}
+              {customFields.length > 0 && (
+                <>
+                  <div className="border-t border-white/10 pt-6">
+                    <h3 className="text-lg font-medium mb-4">Additional Information</h3>
+                  </div>
+
+                  {customFields.map((field) => (
+                    <div key={field.id}>
+                      <label className="block text-sm font-medium mb-2">
+                        {field.label} {field.required && '*'}
+                      </label>
+                      {renderField(field)}
+                    </div>
+                  ))}
+                </>
               )}
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">
-                  {error}
-                </div>
-              )}
 
-              {registrationSource === 'GOOGLE_FORM' && externalFormUrl && (
-                <div className="rounded-xl border border-amber-300/30 bg-amber-500/10 p-5">
-                  <h2 className="text-lg font-semibold text-amber-100">Registration via Google Form</h2>
-                  <p className="mt-2 text-sm text-amber-100/90">
-                    This event uses an external registration form. Click below to continue.
-                  </p>
+            <div className="flex gap-4 pt-6">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="flex-1 px-6 py-3 rounded-lg border border-white/10 hover:bg-white/10 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex-1 px-6 py-3 bg-neon text-black font-semibold rounded-lg hover:bg-neon/80 disabled:opacity-50 transition"
+              >
+                {submitting ? 'Registering...' : 'Complete Registration'}
+              </button>
+            </div>
+              </>
+            )}
+
+            {registrationSource === 'GOOGLE_FORM' && (
+              <div className="flex gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="flex-1 px-6 py-3 rounded-lg border border-white/10 hover:bg-white/10 transition"
+                >
+                  Back
+                </button>
+                {externalFormUrl && (
                   <a
                     href={externalFormUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber-300 px-4 py-2 text-sm font-semibold text-black transition hover:bg-amber-200"
+                    className="flex-1 rounded-lg bg-amber-300 px-6 py-3 text-center font-semibold text-black transition hover:bg-amber-200"
                   >
-                    Open Google Form
+                    Continue to Form
                   </a>
-                </div>
-              )}
-
-              {registrationSource === 'GOOGLE_FORM' && !externalFormUrl && (
-                <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
-                  Registration is configured as Google Form, but the form URL is missing.
-                </div>
-              )}
-
-              {registrationSource === 'WEBSITE' && (
-                <>
-                  <div className="space-y-6">
-                    <h2 className="text-xl font-semibold">Registration Information</h2>
-
-                    {/* Basic fields - always shown */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Full Name *</label>
-                      <input
-                        type="text"
-                        value={`${user.firstName || ''} ${user.lastName || ''}`.trim() || user.name || ''}
-                        disabled
-                        className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-lg opacity-60"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Email *</label>
-                      <input
-                        type="email"
-                        value={user.email}
-                        disabled
-                        className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-lg opacity-60"
-                      />
-                    </div>
-
-                    {/* Custom fields */}
-                    {customFields.length > 0 && (
-                      <>
-                        <div className="border-t border-white/10 pt-6">
-                          <h3 className="text-lg font-medium mb-4">Additional Information</h3>
-                        </div>
-
-                        {customFields.map((field) => (
-                          <div key={field.id}>
-                            <label className="block text-sm font-medium mb-2">
-                              {field.label} {field.required && '*'}
-                            </label>
-                            {renderField(field)}
-                          </div>
-                        ))}
-                      </>
-                    )}
-                  </div>
-
-                  <div className="flex gap-4 pt-6">
-                    <button
-                      type="button"
-                      onClick={() => router.back()}
-                      className="flex-1 px-6 py-3 rounded-lg border border-white/10 hover:bg-white/10 transition"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="flex-1 px-6 py-3 bg-neon text-black font-semibold rounded-lg hover:bg-neon/80 disabled:opacity-50 transition"
-                    >
-                      {submitting ? 'Registering...' : 'Complete Registration'}
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {registrationSource === 'GOOGLE_FORM' && (
-                <div className="flex gap-4 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => router.back()}
-                    className="flex-1 px-6 py-3 rounded-lg border border-white/10 hover:bg-white/10 transition"
-                  >
-                    Back
-                  </button>
-                  {externalFormUrl && (
-                    <a
-                      href={externalFormUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 rounded-lg bg-amber-300 px-6 py-3 text-center font-semibold text-black transition hover:bg-amber-200"
-                    >
-                      Continue to Form
-                    </a>
-                  )}
-                </div>
-              )}
-            </form>
-          )}
+                )}
+              </div>
+            )}
+          </form>
         </div>
       </main>
 

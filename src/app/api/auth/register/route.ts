@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     );
   } catch (error: any) {
     console.error("Register error:", error);
-
+    
     if (error.name === "ZodError") {
       return NextResponse.json(
         {

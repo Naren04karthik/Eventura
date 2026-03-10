@@ -37,7 +37,7 @@ export async function POST(
 
     let qrToken = "";
 
-    // support "registrationId:qrToken" and JSON QR 
+    // Support both legacy "registrationId:qrToken" and JSON QR payload format.
     try {
       const parsed = JSON.parse(data.qrData);
       qrToken = parsed?.qrToken || "";

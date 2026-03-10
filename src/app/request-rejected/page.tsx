@@ -29,7 +29,3 @@ export default function RequestRejectedPage() {
     </div>
   );
 }
-
-
-GIT_AUTHOR_DATE="2026-03-10 22:10:49" GIT_COMMITTER_DATE="2026-03-10 22:10:49" git merge --no-ff module/dashboard -m "integrated my branch(dashboard) to dev branch"
- 

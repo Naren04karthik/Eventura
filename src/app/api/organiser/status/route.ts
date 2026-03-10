@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkOrganiserStatus } from "@/services/organiser.service";
 
+/**
+ * GET /api/organiser/status?email=...
+ * Check approval status of organiser registration
+ */
 export async function GET(req: NextRequest) {
   try {
     const email = req.nextUrl.searchParams.get("email");

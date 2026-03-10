@@ -275,7 +275,7 @@ export default function SuperAdminDashboard() {
                   </thead>
                   <tbody>
                     {adminUsers.map((admin) => (
-                      <tr
+                      <tr 
                         key={admin.id}
                         className="border-b border-white/5 hover:bg-white/5 transition"
                       >
@@ -300,7 +300,7 @@ export default function SuperAdminDashboard() {
           </div>
         )}
       </main>
-
+      
       <Footer />
     </div>
   );

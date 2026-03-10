@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { registerOrganiser } from "@/services/organiser.service";
 import { organiserRegisterSchema } from "@/lib/validations";
 
+/**
+ * POST /api/organiser/register
+ * Self-register as ORGANISER (requires ADMIN approval)
+ */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

@@ -1,80 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-function resolveOrganizerId(req: NextRequest) {
-  return req.headers.get('x-user-id') || req.nextUrl.searchParams.get('organiserId');
-}
-
-export async function POST(
-  req: NextRequest,
+export async function PATCH(
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    const organizerId = resolveOrganizerId(req);
-
-    if (!organizerId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Organizer identity is required',
-        },
-        { status: 401 }
-      );
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const existingEvent = await prisma.event.findUnique({
+    const { id } = await params;
+    const { isLive } = await request.json();
+
+    // Check if event exists and user is the organizer
+    const event = await prisma.event.findUnique({
       where: { id },
-      select: { id: true, organiserId: true, isLive: true },
+      select: { organiserId: true },
     });
 
-    if (!existingEvent) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Event not found',
-        },
-        { status: 404 }
-      );
+    if (!event) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
-    if (existingEvent.organiserId !== organizerId) {
+    if (event.organiserId !== user.id) {
       return NextResponse.json(
-        {
-          success: false,
-          message: 'Not authorized to toggle live status for this event',
-        },
+        { error: 'Only the event organizer can change live status' },
         { status: 403 }
       );
     }
 
-    const event = await prisma.event.update({
+    // Update live status
+    const updatedEvent = await prisma.event.update({
       where: { id },
-      data: { isLive: !existingEvent.isLive },
+      data: { isLive: isLive === true },
       select: {
         id: true,
-        eventCode: true,
-        title: true,
         isLive: true,
+        title: true,
       },
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: event.isLive ? 'Event is now live' : 'Event is no longer live',
-        data: { event },
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({
+      success: true,
+      data: updatedEvent,
+      message: isLive ? 'Event is now live' : 'Event is no longer live',
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to toggle live status';
-
+    console.error('Error updating event live status:', error);
     return NextResponse.json(
-      {
-        success: false,
-        message,
-      },
+      { error: 'Failed to update live status' },
       { status: 500 }
     );
   }

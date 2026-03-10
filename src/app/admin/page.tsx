@@ -155,6 +155,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-ink text-white flex flex-col">
+      {/* Header */}
       <Navbar user={user} />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12">
@@ -199,41 +200,41 @@ export default function AdminDashboard() {
           <div className="rounded-3xl border-strong bg-black p-8">
             <h2 className="mb-6 text-xl font-normal">Users</h2>
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-white/10">
-                    <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Name</th>
-                    <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Email</th>
-                    <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Role</th>
-                    <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Joined</th>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Name</th>
+                  <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Email</th>
+                  <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Role</th>
+                  <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Joined</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.length === 0 ? (
+                  <tr>
+                    <td className="px-4 py-8 text-sm text-muted" colSpan={4}>
+                      No users found for your college.
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {users.length === 0 ? (
-                    <tr>
-                      <td className="px-4 py-8 text-sm text-muted" colSpan={4}>
-                        No users found for your college.
+                ) : (
+                  users.map((u) => (
+                    <tr key={u.id} className="border-b border-white/5 transition hover:bg-white/5">
+                      <td className="px-4 py-4 text-sm font-medium">{u.firstName} {u.lastName}</td>
+                      <td className="px-4 py-4 text-sm text-muted">{u.email}</td>
+                      <td className="px-4 py-4 text-sm">
+                        <span className="inline-block px-2 py-1 text-xs rounded-full bg-neon/10 text-neon">
+                          {u.role === 'USER' ? 'STUDENT' : u.role}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-soft">
+                        {new Date(u.createdAt).toLocaleDateString()}
                       </td>
                     </tr>
-                  ) : (
-                    users.map((u) => (
-                      <tr key={u.id} className="border-b border-white/5 transition hover:bg-white/5">
-                        <td className="px-4 py-4 text-sm font-medium">{u.firstName} {u.lastName}</td>
-                        <td className="px-4 py-4 text-sm text-muted">{u.email}</td>
-                        <td className="px-4 py-4 text-sm">
-                          <span className="inline-block px-2 py-1 text-xs rounded-full bg-neon/10 text-neon">
-                            {u.role === 'USER' ? 'STUDENT' : u.role}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-soft">
-                          {new Date(u.createdAt).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
           </div>
         )}
 
@@ -242,97 +243,96 @@ export default function AdminDashboard() {
           <div className="rounded-3xl border-strong bg-black p-8">
             <h2 className="mb-6 text-xl font-normal">Events</h2>
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-white/10">
-                    <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Event Title</th>
-                    <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Registrations</th>
-                    <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Actions</th>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Event Title</th>
+                  <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Registrations</th>
+                  <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {events.map((e) => (
+                  <tr key={e.id} className="border-b border-white/5 transition hover:bg-white/5">
+                    <td className="px-4 py-4 text-sm">{e.title}</td>
+                    <td className="px-4 py-4 text-sm">{e._count.registrations}</td>
+                    <td className="px-4 py-4">
+                      <Link
+                        href={`/events/${e.eventCode}`}
+                        className="text-neon hover:underline text-sm"
+                      >
+                        View
+                      </Link>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {events.map((e) => (
-                    <tr key={e.id} className="border-b border-white/5 transition hover:bg-white/5">
-                      <td className="px-4 py-4 text-sm">{e.title}</td>
-                      <td className="px-4 py-4 text-sm">{e._count.registrations}</td>
-                      <td className="px-4 py-4">
-                        <Link
-                          href={`/events/${e.eventCode}`}
-                          className="text-neon hover:underline text-sm"
-                        >
-                          View
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
           </div>
         )}
 
-        {/* Organizer Requests Tab */}
         {activeTab === 'organizers' && (
           <div className="rounded-3xl border-strong bg-black p-8">
             <h2 className="mb-6 text-xl font-normal">Organizer Requests</h2>
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-white/10">
-                    <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Organizer</th>
-                    <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">College</th>
-                    <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Contact</th>
-                    <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Reason</th>
-                    <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Actions</th>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Organizer</th>
+                  <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">College</th>
+                  <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Contact</th>
+                  <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Reason</th>
+                  <th className="px-4 py-4 text-left text-sm font-medium text-soft uppercase tracking-[0.1em]">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {organizerRequests.length === 0 ? (
+                  <tr>
+                    <td className="px-4 py-8 text-sm text-muted" colSpan={5}>
+                      No pending organizer requests.
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {organizerRequests.length === 0 ? (
-                    <tr>
-                      <td className="px-4 py-8 text-sm text-muted" colSpan={5}>
-                        No pending organizer requests.
+                ) : (
+                  organizerRequests.map((request) => (
+                    <tr key={request.id} className="border-b border-white/5 transition hover:bg-white/5">
+                      <td className="px-4 py-4">
+                        <div className="font-medium">{request.user.firstName} {request.user.lastName}</div>
+                        <div className="text-xs text-muted">{request.user.email}</div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="font-medium">{request.organizationName}</div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-muted">
+                        {request.contactNumber}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-muted">
+                        {request.reason}
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => openCollegeModal(request.id)}
+                            disabled={requestsLoading}
+                            className="rounded-full border border-green-500/40 px-3 py-1 text-xs text-green-400 transition hover:bg-green-500/10 disabled:opacity-50"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleOrganizerAction(request.id, 'REJECT')}
+                            disabled={requestsLoading}
+                            className="rounded-full border border-red-500/40 px-3 py-1 text-xs text-red-400 transition hover:bg-red-500/10 disabled:opacity-50"
+                          >
+                            Reject
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  ) : (
-                    organizerRequests.map((request) => (
-                      <tr key={request.id} className="border-b border-white/5 transition hover:bg-white/5">
-                        <td className="px-4 py-4">
-                          <div className="font-medium">{request.user.firstName} {request.user.lastName}</div>
-                          <div className="text-xs text-muted">{request.user.email}</div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="font-medium">{request.organizationName}</div>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-muted">
-                          {request.contactNumber}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-muted">
-                          {request.reason}
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => openCollegeModal(request.id)}
-                              disabled={requestsLoading}
-                              className="rounded-full border border-green-500/40 px-3 py-1 text-xs text-green-400 transition hover:bg-green-500/10 disabled:opacity-50"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleOrganizerAction(request.id, 'REJECT')}
-                              disabled={requestsLoading}
-                              className="rounded-full border border-red-500/40 px-3 py-1 text-xs text-red-400 transition hover:bg-red-500/10 disabled:opacity-50"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
           </div>
         )}
       </main>
@@ -345,6 +345,7 @@ export default function AdminDashboard() {
             <p className="mb-4 text-sm text-muted">
               Choose which college this organizer belongs to
             </p>
+            
             <div className="mb-6">
               <label htmlFor="college-select" className="mb-2 block text-sm font-medium">
                 College
@@ -363,6 +364,7 @@ export default function AdminDashboard() {
                 ))}
               </select>
             </div>
+
             <div className="flex justify-end gap-3">
               <button
                 onClick={closeCollegeModal}

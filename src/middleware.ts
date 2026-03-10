@@ -50,7 +50,7 @@ const profileExemptRoutes = [
   '/complete-profile',
   '/api/profile/complete',
   '/api/auth/logout',
-  '/api/auth/me',
+  '/api/auth/me', // Allow checking auth status
 ];
 
 export async function middleware(request: NextRequest) {
@@ -69,14 +69,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Get token from cookie
+  // Get token from cookie (use 'auth_token' to match what's set in auth.ts)
   const token = request.cookies.get('auth_token')?.value;
 
   if (!token) {
+    // Redirect to login for dashboard routes
     if (pathname.startsWith('/dashboard')) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
+    // Return 401 for API routes
     return NextResponse.json(
       {
         success: false,
@@ -90,6 +92,7 @@ export async function middleware(request: NextRequest) {
   const payload = await verifyToken(token);
 
   if (!payload) {
+    // Clear invalid cookie
     const response = pathname.startsWith('/dashboard')
       ? NextResponse.redirect(new URL('/login', request.url))
       : NextResponse.json(
@@ -109,6 +112,8 @@ export async function middleware(request: NextRequest) {
   const isProfileComplete = payload.isProfileComplete ?? false;
   const isApiRoute = pathname.startsWith('/api');
 
+  // Check if profile completion is required
+  // Skip for admins, superadmins, and profile-exempt routes
   const isProfileExempt = profileExemptRoutes.some((route) => pathname.startsWith(route));
   if (
     !isProfileComplete &&
@@ -116,9 +121,11 @@ export async function middleware(request: NextRequest) {
     role !== 'SUPERADMIN' &&
     role !== 'ADMIN'
   ) {
+    // For organizers, only redirect if they are ACTIVE
     if (role === 'ORGANIZER' && status !== 'ACTIVE') {
       // Let pending/rejected organizers continue to their status pages
     } else {
+      // Redirect to complete-profile page
       if (isApiRoute) {
         return NextResponse.json(
           {
@@ -198,8 +205,16 @@ export async function middleware(request: NextRequest) {
   });
 }
 
+// Configure which routes to run middleware on
 export const config = {
   matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
