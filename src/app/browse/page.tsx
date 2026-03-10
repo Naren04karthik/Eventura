@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ChangeEvent } from 'react';
 import EventCard, { EventCardData } from '@/components/events/EventCard';
+import { filterByVisibility, searchEvents, sortBrowseEvents } from '@/lib/explore-utils';
 
 type Event = EventCardData;
 
@@ -44,39 +45,16 @@ export default function BrowseEventsPage() {
 
   // Filter and sort events based on user selections
   useEffect(() => {
-    let results: Event[] = events.filter((event: Event) => {
-      // Text search filter - searches title, description, and venue
-      const matchesSearch =
-        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.venue.toLowerCase().includes(searchQuery.toLowerCase());
-
-      // Visibility filter
-      let matchesVisibility = true;
-      if (visibilityFilter === 'public') {
-        matchesVisibility = event.visibility === 'PUBLIC';
-      } else if (visibilityFilter === 'college') {
-        matchesVisibility = event.visibility === 'COLLEGE' || event.visibility === 'PRIVATE';
-      }
-
-      return matchesSearch && matchesVisibility;
-    });
-
-    // Apply sorting
-    if (sortBy === 'date') {
-      results.sort((a: Event, b: Event) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    } else if (sortBy === 'popularity') {
-      results.sort((a: Event, b: Event) => (b._count?.registrations || 0) - (a._count?.registrations || 0));
-    } else if (sortBy === 'newest') {
-      results.sort((a: Event, b: Event) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }
+    const searched = searchEvents(events, searchQuery);
+    const visibilityApplied = filterByVisibility(searched, visibilityFilter);
+    const results = sortBrowseEvents(visibilityApplied, sortBy);
 
     setFilteredEvents(results);
   }, [searchQuery, sortBy, visibilityFilter, events]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
           <p className="text-gray-600 font-medium">Loading events...</p>
@@ -86,7 +64,7 @@ export default function BrowseEventsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
       {/* Header Section */}
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

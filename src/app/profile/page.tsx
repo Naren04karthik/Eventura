@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import ProfileCompletionCard from '@/components/profile/ProfileCompletionCard';
 
 const BRANCHES = [
   { value: 'CSE', label: 'Computer Science Engineering' },
@@ -29,7 +29,6 @@ const GENDERS = [
 ];
 
 export default function ProfilePage() {
-  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -233,24 +232,13 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            {/* Completion Status Bar */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">Profile Completion</h3>
-                <span className="text-lg font-bold text-blue-600">{completionStatus.completionPercentage}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${completionStatus.completionPercentage}%` }}
-                ></div>
-              </div>
-              {completionStatus.missingFields.length > 0 && (
-                <p className="text-xs text-gray-600 mt-2">
-                  Missing: {completionStatus.missingFields.join(', ')}
-                </p>
-              )}
-            </div>
+            <ProfileCompletionCard
+              status={{
+                isComplete: completionStatus.isComplete,
+                completionPercentage: completionStatus.completionPercentage,
+                missingFields: completionStatus.missingFields,
+              }}
+            />
           </div>
         </div>
 

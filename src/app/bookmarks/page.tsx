@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import EventCard, { EventCardData } from '@/components/events/EventCard';
+import { searchEvents, sortBookmarkEvents } from '@/lib/explore-utils';
 
 type BookmarkedEvent = EventCardData;
 
@@ -80,35 +81,9 @@ export default function BookmarksPage() {
     }
   }
 
-  function organizerName(event: BookmarkedEvent) {
-    const first = event.organiser?.firstName || '';
-    const last = event.organiser?.lastName || '';
-    const full = `${first} ${last}`.trim();
-    return full || 'Unknown organizer';
-  }
-
   const filteredEvents = useMemo(() => {
-    let list = [...events];
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      list = list.filter((event) => {
-        return (
-          event.title.toLowerCase().includes(query) ||
-          event.description.toLowerCase().includes(query) ||
-          event.venue.toLowerCase().includes(query) ||
-          organizerName(event).toLowerCase().includes(query)
-        );
-      });
-    }
-
-    if (sortBy === 'date') {
-      list.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    } else if (sortBy === 'popularity') {
-      list.sort((a, b) => (b._count?.registrations || 0) - (a._count?.registrations || 0));
-    }
-
-    return list;
+    const searched = searchEvents(events, searchQuery);
+    return sortBookmarkEvents(searched, sortBy);
   }, [events, searchQuery, sortBy]);
 
   if (loading) {
