@@ -1,0 +1,12 @@
+services:
+  app:
+    image: vandanj01/eventura:latest
+    container_name: eventura-app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-this-in-production}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      SECURE_COOKIE: ${SECURE_COOKIE:-false}
