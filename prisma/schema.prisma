@@ -1,0 +1,244 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String         @id @default(uuid())
+  email             String         @unique
+  password          String
+  firstName         String
+  lastName          String
+  role              Role           @default(USER)
+  status            UserStatus     @default(ACTIVE)
+  profileImage      String?
+  collegeId         String?
+  isProfileComplete Boolean        @default(false)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  bookmarks         Bookmark[]
+  events            Event[]
+  registrations     Registration[]
+  college           College?       @relation(fields: [collegeId], references: [id])
+  organizerRequest  OrganizerRequest?
+  profile           Profile?
+
+  @@index([email])
+  @@index([role])
+  @@index([collegeId])
+  @@map("users")
+}
+
+model Profile {
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  firstName     String
+  lastName      String
+  whatsapp      String
+  gender        String?
+  dateOfBirth   DateTime
+  college       String
+  year          Int
+  branch        Branch
+  customBranch  String?
+  collegeId     String
+  city          String
+  state         String
+  country       String
+  profilePhoto  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("profiles")
+}
+
+model OrganizerRequest {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  organizationName String
+  website          String?
+  contactNumber    String
+  reason           String
+  reviewedBy       String?
+  reviewedAt       DateTime?
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("organizer_requests")
+}
+
+model College {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  domain    String?  @unique
+  location  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events    Event[]
+  users     User[]
+
+  @@index([name])
+  @@index([domain])
+  @@map("colleges")
+}
+
+model Event {
+  id                           String         @id @default(uuid())
+  eventCode                    String         @unique // 6-digit unique event code
+  title                        String
+  description                  String?
+  tags                         String?        // Comma-separated tags for event categorization
+  date                         DateTime       // Main event date/time
+  venue                        String         // Event location/venue
+  bannerUrl                    String?        // Event banner image URL
+  capacity                     Int?
+  isPaid                        Boolean        @default(false)
+  ticketPrice                  Decimal?       @db.Decimal(10, 2) // Price per ticket if paid
+  registrationType             String         @default("SOLO") // SOLO or TEAM
+  teamRequired                 Boolean        @default(false) // If true, team is required
+  minTeamSize                  Int            @default(1)
+  maxTeamSize                  Int            @default(5)
+  isLive                       Boolean        @default(false) // If true, event is currently running/live
+  customRegistrationFields     String?        @db.Text // JSON array of custom fields
+  status                       EventStatus    @default(DRAFT)
+  organiserId                  String         // Renamed from createdById for clarity
+  collegeId                    String?
+  createdAt                    DateTime       @default(now())
+  updatedAt                    DateTime       @updatedAt
+  bookmarks                    Bookmark[]
+  college                      College?       @relation(fields: [collegeId], references: [id])
+  organiser                    User           @relation(fields: [organiserId], references: [id])
+  registrations                Registration[]
+
+  @@index([collegeId])
+  @@index([organiserId])
+  @@index([date])
+  @@index([status])
+  @@index([eventCode])
+  @@map("events")
+}
+
+model Registration {
+  id                 String             @id @default(uuid())
+  userId             String
+  eventId            String
+  status             RegistrationStatus @default(PENDING)
+  qrCode             String?            @unique
+  customFieldsData   String?            @db.Text // JSON object with custom field responses
+  paymentScreenshot  String?            // URL/path to payment screenshot
+  transactionId      String?            // Payment transaction ID
+  attendanceMarkedAt DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  event              Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([userId])
+  @@index([eventId])
+  @@index([qrCode])
+  @@index([status])
+  @@map("registrations")
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([userId])
+  @@index([eventId])
+  @@map("bookmarks")
+}
+
+model contact_messages {
+  id        String    @id
+  name      String
+  email     String
+  subject   String?
+  message   String
+  isRead    Boolean   @default(false)
+  repliedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([createdAt])
+  @@index([isRead])
+}
+
+model AdminRequest {
+  id          String              @id @default(uuid())
+  collegeName String
+  firstName   String              @default("Admin")
+  email       String              @unique
+  passwordHash String?
+  status      AdminRequestStatus  @default(PENDING)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([status])
+  @@index([email])
+  @@map("admin_requests")
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  ORGANIZER
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING
+  REJECTED
+  SUSPENDED
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  ATTENDED
+  CANCELLED
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum AdminRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Branch {
+  CSE
+  ECE
+  EEE
+  MECH
+  CIVIL
+  IT
+  AIDS
+  AIML
+  BBA
+  BCA
+  MBA
+  MCA
+  OTHER
+}
