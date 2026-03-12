@@ -2,7 +2,7 @@
 
 A modern, full-stack event management platform built with Next.js 16, TypeScript, Prisma, and PostgreSQL. Features role-based dashboards, JWT authentication, event registration, and QR code-based attendance tracking.
 
-## 🚀 Tech Stack
+##  Tech Stack
 
 - **Frontend**: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes, Service Layer Pattern
@@ -12,7 +12,7 @@ A modern, full-stack event management platform built with Next.js 16, TypeScript
 - **Password Hashing**: bcryptjs
 - **Fonts**: Space Grotesk (display), Sora (body), JetBrains Mono (code)
 
-## 🎨 Design System
+##  Design System
 
 Eventura features a dark, modern UI inspired by Eventify with:
 - **Color Scheme**: Deep blacks (#050607, #0b0f14) with neon blue accents (#5ad7ff)
@@ -20,7 +20,7 @@ Eventura features a dark, modern UI inspired by Eventify with:
 - **Effects**: Thin borders (12-18% transparency), glass morphism, subtle gradients
 - **Components**: Card glow effects, backdrop filters, grid patterns
 
-## 📦 Project Structure
+##  Project Structure
 
 ```
 eventura/
@@ -45,7 +45,7 @@ eventura/
 └── .env.example               # Environment variables template
 ```
 
-## 🔧 Setup Instructions
+##  Setup Instructions
 
 ### Prerequisites
 
@@ -87,7 +87,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to see the landing page.
 
-## 🛠️ Available Scripts
+##  Available Scripts
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
@@ -95,14 +95,14 @@ Open [http://localhost:3000](http://localhost:3000) to see the landing page.
 - `npx prisma studio` - Open Prisma Studio (database GUI)
 - `npx prisma migrate dev` - Create new migration
 
-## 🔐 Authentication Flow
+##  Authentication Flow
 
 1. **Register**: `POST /api/auth/register` with email, password, name, role
 2. **Login**: `POST /api/auth/login` returns JWT in HTTP-only cookie
 3. **Protected Routes**: Middleware validates JWT and injects user info
 4. **Logout**: `POST /api/auth/logout` clears authentication cookie
 
-## 📊 Database Schema
+##  Database Schema
 
 **Models:**
 - **User**: Email, password, role (SUPERADMIN/ADMIN/ORGANISER/USER), profile
@@ -112,7 +112,7 @@ Open [http://localhost:3000](http://localhost:3000) to see the landing page.
 - **Bookmark**: User-Event bookmark/favorite
 - **ContactMessage**: Contact form submissions
 
-## 🎯 API Endpoints
+##  API Endpoints
 
 ### Authentication
 - `POST /api/auth/register` - Create new user account
@@ -139,9 +139,9 @@ Open [http://localhost:3000](http://localhost:3000) to see the landing page.
 - `POST /api/events/[id]/bookmark` - Toggle bookmark
 - `GET /api/bookmarks` - Get user's bookmarked events
 
-## 🚧 Next Steps
+##  Next Steps
 
-### Completed ✅
+### Completed 
 - [x] **Registration Service**: User event registration with QR code generation
 - [x] **QR Scanner**: Attendance verification system
 - [x] **Bookmark API**: Save/unsave events
@@ -160,7 +160,7 @@ Open [http://localhost:3000](http://localhost:3000) to see the landing page.
 - [ ] Event analytics (registrations, attendance)
 - [ ] Export attendance reports (CSV/PDF)
 
-## 📝 Architecture Notes
+## Architecture Notes
 
 **Service Layer Pattern**: Business logic lives in `/services`, NOT in API routes.
 
